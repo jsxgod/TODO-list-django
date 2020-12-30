@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>TO DO</title>
+
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <link href="https://fonts.googleapis.com/css?family=Montserrat&display=swap"
+          rel="stylesheet">
+
+    <style type="text/css">
+        body{
+            background: rgb(54,217,182);
+            background: linear-gradient(
+                    90deg,
+                    rgba(53,217,182,1) 0%,
+                    rgba(32,152, 126,1) 43%,
+                    rgba(0,212,255,1) 100%
+            );
+        }
+
+        h1, h2, h3, h4, h5, p, span, strike{
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        #task-container{
+            max-width: 600px;
+            margin: 0 auto;
+            box-shadow: 0 14px 28px rgba(0,0,0,0.25), 0 10px rgba(0,0,0,0.20);
+            background-color: #fff;
+            margin-top: 100px;
+            margin-bottom: 100px;
+
+            justify-content: space-around;
+            align-items: flex-start;
+        }
+
+        #form-wrapper{
+            position: -webkit-sticky;
+            position: sticky;
+            top: 0;
+            border-bottom: 1px solid #e9e9e9;
+            background-color: #fff;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.25);
+            padding: 40px;
+        }
+
+        #submit{
+            background-color: #36d9b6;
+            border-radius: 0;
+            border: 0;
+            color: #fff;
+        }
+
+        .flex-wrapper{
+            display: flex;
+        }
+
+        .task-wrapper{
+            margin: 5px;
+            padding: 5px;
+            cursor: pointer;
+            border-bottom: 1px solid #e9e9e9;
+            color: #686868
+        }
+    </style>
+
+</head>
+<body>
+    <div class="container">
+        <div id="task-container">
+            <div id="form-wrapper">
+                <form id="form">
+                    <div class="flex-wrapper">
+                        <div style="flex: 6">
+                            <input id="title" class="form-control" type="text" name="title" placeholder="Task name">
+                        </div>
+                        <div style="flex: 1">
+                            <input id="submit" class="btn" type="submit" value="Add Task">
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <div id="list-wrapper">
+
+            </div>
+
+        </div>
+    </div>
+
+    <script type="text/javascript">
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    // Does this cookie string begin with the name we want?
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        const csrftoken = getCookie('csrftoken');
+        console.log('TOKEN:', csrftoken)
+        var activeItem = null;
+
+        buildList();
+
+        function buildList(){
+            var wrapper = document.getElementById('list-wrapper');
+            wrapper.innerHTML = '';
+            var url = 'http://192.168.0.13:8080/api/task-list/';
+
+            fetch(url)
+                .then((response) => response.json())
+                .then(function(data){
+                    console.log('Data:', data);
+
+                    var list = data;
+
+                    var n = 1;
+                    data.forEach(function(item){
+                        var title = `<span class="title">${item.title}</span>`;
+                        if (item.completed){
+                            title = `<span class="title" style="text-decoration: line-through;">${item.title}</span>`;
+                        }
+                        var element = `
+                            <div id="data-row-${n}" class="task-wrapper flex-wrapper">
+                                <div style="flex:7">
+                                    ${title}
+                                </div>
+                                <div style="flex:1">
+                                    <button class="btn btn-sm btn-outline-info edit">Edit </button>
+                                </div>
+                                <div style="flex:1">
+                                    <button class="btn btn-sm btn-outline-dark delete">❌</button>
+                                </div>
+                            </div>
+                        `;
+
+                        wrapper.innerHTML += element;
+                        n += 1;
+                    });
+
+
+                    console.log('LOADED')
+                    for (var i in list){
+                        var editButton = document.getElementsByClassName('edit')[i];
+                        var deleteButton = document.getElementsByClassName('delete')[i];
+                        var titleText = document.getElementsByClassName('title')[i];
+
+                        editButton.addEventListener('click', (function(item){
+                            return function(){
+                                editItem(item)
+                            }
+                        })(list[i]));
+
+                        deleteButton.addEventListener('click', (function(item){
+                            return function(){
+                                deleteItem(item)
+                            }
+                        })(list[i]));
+
+                        titleText.addEventListener('click', (function(item){
+                            return function(){
+                                crossOut(item)
+                            }
+                        })(list[i]));
+                    }
+
+
+                })
+        }
+
+        var form = document.getElementById('form-wrapper');
+        form.addEventListener('submit', function(e){
+            e.preventDefault();
+            console.log('form submitted');
+            var url = 'http://192.168.0.13:8080/api/task-create/';
+
+            if (activeItem != null){
+                 console.log('updating...');
+                 url = `http://192.168.0.13:8080/api/task-update/${activeItem.id}/`;
+                 activeItem = null;
+            }
+
+            var title = document.getElementById('title').value;
+            console.log(title);
+            fetch(url, {
+                    method:'POST',
+                    headers:{
+                        'Content-type':'application/json',
+                        //'X-CSRFToken:':csrftoken,
+                    },
+                    body:JSON.stringify({'title':title})
+                }
+            ).then(function(response){
+                buildList();
+                document.getElementById('form').reset();
+                document.getElementById('submit').value = 'Add Task';
+            })
+        });
+
+        function editItem(item){
+            console.log('Item clicked:', item);
+            activeItem = item;
+            document.getElementById('submit').value = 'Confirm Edit';
+            document.getElementById('title').value = activeItem.title;
+        }
+
+        function deleteItem(item){
+            console.log('Item clicked:', item);
+            fetch(`http://192.168.0.13:8080/api/task-delete/${item.id}/`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-type': 'application/json'
+                }
+            }).then((response) => {
+                buildList()
+            })
+        }
+
+        function crossOut(item){
+            console.log('Item clicked:', item);
+            fetch(`http://192.168.0.13:8080/api/task-update/${item.id}/`, {
+                method: 'POST',
+                headers: {
+                    'Content-type': 'application/json'
+                },
+                body: JSON.stringify({
+                    'title': item.title,
+                    'completed': !item.completed
+                })
+            }).then((response) => {
+                buildList()
+            })
+        }
+    </script>
+</body>
+</html>
