@@ -23,9 +23,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = '!e@!)ww8s_l1gu(llg$!(^6!1^=urbc=d*-zmmm9z=$$#rl)i9'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-# ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '192.168.0.24', '192.168.0.20', '192.168.0.13', 'http://localhost:3000']
 ALLOWED_HOSTS = ['*']
 
 # Application definition
@@ -42,6 +41,7 @@ INSTALLED_APPS = [
     'frontend.apps.FrontendConfig',
     'rest_framework',
     'corsheaders',
+    'sslserver'
 ]
 
 MIDDLEWARE = [
