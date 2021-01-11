@@ -17,6 +17,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SITE_ROOT = os.path.dirname(os.path.realpath(__file__))
 PROJECT_ROOT = os.path.dirname(os.path.realpath(__file__))
 
+STATICFILES_STORAGE = 'whitenoise.django.GzipManifestStaticFilesStorage'
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.1/howto/deployment/checklist/
 
